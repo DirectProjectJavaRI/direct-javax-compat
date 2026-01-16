@@ -1,0 +1,99 @@
+package org.nhindirect.common.javaxcompat.mail.dsn.impl;
+
+import java.util.Enumeration;
+import java.util.List;
+
+import javax.mail.Address;
+import javax.mail.Header;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeBodyPart;
+
+import org.nhindirect.common.javaxcompat.mail.dsn.DSNFailureTextBodyPartGenerator;
+import org.apache.commons.text.StringEscapeUtils;
+
+public class DefaultDSNFailureTextBodyPartGenerator implements DSNFailureTextBodyPartGenerator
+{
+
+    public static final String ORIGINAL_SENDER_TAG = "%original_sender_tag%";
+    public static final String HEADERS_TAG = "%headers_tag%";
+
+
+    private String header;
+    private String footer;
+    private String rejectedRecipientsTitle;
+    private String errorMessageTitle;
+    private String defaultErrorMessage;
+    private HumanReadableTextAssemblerFactory humanReadableTextAssemblerFactory;
+
+    /**
+     * 
+     * @param header
+     * @param footer
+     * @param rejectedRecipientsTitle
+     * @param errorMessageTitle
+     * @param defaultErrorMessage
+     * @param humanReadableTextAssemblerFactory
+     */
+    public DefaultDSNFailureTextBodyPartGenerator(String header, String footer, String rejectedRecipientsTitle,
+	    String errorMessageTitle, String defaultErrorMessage,
+	    HumanReadableTextAssemblerFactory humanReadableTextAssemblerFactory) 
+    {
+		this.header = header;
+		this.footer = footer;
+		this.rejectedRecipientsTitle = rejectedRecipientsTitle;
+		this.errorMessageTitle = errorMessageTitle;
+		this.defaultErrorMessage = defaultErrorMessage;
+		this.humanReadableTextAssemblerFactory = humanReadableTextAssemblerFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MimeBodyPart generate(Address originalSender, List<Address> failedRecipients,
+	    Enumeration<Header> originalMessageHeaders) throws MessagingException 
+	{
+
+    	MimeBodyPart part = null;
+
+	    if (originalSender == null) 
+	    	throw new MessagingException("originalSender can't be null");
+
+	    if (failedRecipients == null) 
+	    	throw new MessagingException("Faile recipients can't be null");
+
+	    final String populatedHeader = header.replace(ORIGINAL_SENDER_TAG,
+		    StringEscapeUtils.escapeHtml4(originalSender.toString()));
+	    
+	    String populatedFooter = null;
+	    
+	    if (originalMessageHeaders != null && originalMessageHeaders.hasMoreElements()) 
+	    {
+	    	populatedFooter = footer.replace(HEADERS_TAG, headersToString(originalMessageHeaders));
+	    } 
+	    else 
+	    {
+	    	populatedFooter = footer;
+	    }
+
+	    final HumanReadableTextAssembler assembler = humanReadableTextAssemblerFactory.createHumanReadableTextAssembler(populatedHeader,
+	    		populatedFooter, rejectedRecipientsTitle, errorMessageTitle, defaultErrorMessage);
+	    part = assembler.assemble(failedRecipients);
+
+	    return part;
+    }
+
+    protected String headersToString(Enumeration<Header> originalMessageHeaders) 
+    {
+		final StringBuffer sb = new StringBuffer();
+		while (originalMessageHeaders.hasMoreElements()) 
+		{
+		    Header h = originalMessageHeaders.nextElement();
+		    // use escapeXml10 vs escapeHtml4 for its NUL character removing capabilities
+		    sb.append(StringEscapeUtils.escapeXml10(h.getName() + ": " + h.getValue()));
+		    sb.append("<br/>");
+		}
+		return sb.toString();
+    }
+}
+
