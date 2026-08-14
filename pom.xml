@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>direct-javax-compat</artifactId>
     <name>Direct Project common APIs for javax compatibility</name>
-    <version>9.0.0</version>
+    <version>9.0.1-SNAPSHOT</version>
     <description>Direct Project common APIs for javax compatibility</description>
     <inceptionYear>2010</inceptionYear>
     <url>http://api.nhindirect.org/x/www/api.nhindirect.org/java/site/direct-common-javax-compat/${project.version}</url> 
